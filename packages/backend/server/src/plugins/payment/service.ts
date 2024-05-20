@@ -14,7 +14,7 @@ import Stripe from 'stripe';
 
 import { CurrentUser } from '../../core/auth';
 import { EarlyAccessType, FeatureManagementService } from '../../core/features';
-import { EventEmitter } from '../../fundamentals';
+import { Config, EventEmitter } from '../../fundamentals';
 import { ScheduleManager } from './schedule';
 import {
   InvoiceStatus,
@@ -66,6 +66,7 @@ export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(
+    private readonly config: Config,
     private readonly stripe: Stripe,
     private readonly db: PrismaClient,
     private readonly scheduleManager: ScheduleManager,
@@ -154,6 +155,14 @@ export class SubscriptionService {
     redirectUrl: string;
     idempotencyKey: string;
   }) {
+    if (
+      this.config.deploy &&
+      this.config.affine.canary &&
+      !this.features.isStaff(user.email)
+    ) {
+      throw new BadRequestException('You are not allowed to do this.');
+    }
+
     const currentSubscription = await this.db.userSubscription.findFirst({
       where: {
         userId: user.id,

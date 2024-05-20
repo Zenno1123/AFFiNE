@@ -22,6 +22,8 @@ function extractTokenFromHeader(authorization: string) {
   return authorization.substring(7);
 }
 
+const PUBLIC_ENTRYPOINT_SYMBOL = Symbol('public');
+
 @Injectable()
 export class AuthGuard implements CanActivate, OnModuleInit {
   private auth!: AuthService;
@@ -72,10 +74,10 @@ export class AuthGuard implements CanActivate, OnModuleInit {
     }
 
     // api is public
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
-      context.getClass(),
-      context.getHandler(),
-    ]);
+    const isPublic = this.reflector.getAllAndOverride<boolean>(
+      PUBLIC_ENTRYPOINT_SYMBOL,
+      [context.getClass(), context.getHandler()]
+    );
 
     if (isPublic) {
       return true;
@@ -110,4 +112,4 @@ export const Auth = () => {
 };
 
 // api is public accessible
-export const Public = () => SetMetadata('isPublic', true);
+export const Public = () => SetMetadata(PUBLIC_ENTRYPOINT_SYMBOL, true);

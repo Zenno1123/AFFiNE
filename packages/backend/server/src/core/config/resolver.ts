@@ -14,6 +14,7 @@ import { GraphQLJSON } from 'graphql-scalars';
 
 import { Config, DeploymentType, URLHelper } from '../../fundamentals';
 import { Public } from '../auth';
+import { Admin } from '../common';
 import { ServerFlags } from './config';
 import { ServerFeature } from './types';
 
@@ -170,14 +171,15 @@ export class ServerConfigResolver {
 export class ServerRuntimeConfigResolver {
   constructor(private readonly config: Config) {}
 
+  @Admin()
   @Query(() => [ServerRuntimeConfigType], {
     description: 'get all server runtime configurable settings',
   })
   serverRuntimeConfig(): Promise<ServerRuntimeConfigType[]> {
-    // TODO: permission check
     return this.config.runtime.list();
   }
 
+  @Admin()
   @Mutation(() => ServerRuntimeConfigType, {
     description: 'update server runtime configurable setting',
   })
@@ -185,7 +187,6 @@ export class ServerRuntimeConfigResolver {
     @Args('id') id: string,
     @Args({ type: () => GraphQLJSON, name: 'value' }) value: any
   ): Promise<ServerRuntimeConfigType> {
-    // TODO: permission check
-    return await this.config.runtime.set(id as any, value);
+    return this.config.runtime.set(id as any, value);
   }
 }
