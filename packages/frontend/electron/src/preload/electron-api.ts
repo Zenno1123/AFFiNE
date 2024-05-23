@@ -1,7 +1,7 @@
 // Please add modules to `external` in `rollupOptions` to avoid wrong bundling.
 import type { EventBasedChannel } from 'async-call-rpc';
 import { AsyncCall } from 'async-call-rpc';
-import { ipcRenderer, type IpcRendererEvent } from 'electron';
+import { ipcRenderer } from 'electron';
 import { Subject } from 'rxjs';
 import { z } from 'zod';
 
@@ -54,7 +54,9 @@ export const cmdFind = {
     action: 'clearSelection' | 'keepSelection' | 'activateSelection'
   ) => ipcRenderer.send('stop-find-in-page', action),
   onFindInPageResult: (callBack: (data: any) => void) =>
-    ipcRenderer.on('found-in-page-result', (event, data) => callBack(data)),
+    ipcRenderer.on('found-in-page-result', (_event, data) => callBack(data)),
+  offFindInPageResult: (callBack: (data: any) => void) =>
+    ipcRenderer.removeListener('found-in-page-result', callBack),
 };
 
 export function getElectronAPIs() {
