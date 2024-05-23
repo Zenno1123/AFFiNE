@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { join } from 'node:path';
 
 import type { CookiesSetDetails } from 'electron';
-import { BrowserWindow, nativeTheme } from 'electron';
+import { BrowserWindow, ipcMain, nativeTheme } from 'electron';
 import electronWindowState from 'electron-window-state';
 
 import { isLinux, isMacOS, isWindows } from '../shared/utils';
@@ -168,6 +168,25 @@ async function createWindow(additionalArguments: string[]) {
   browserWindow.on('leave-full-screen', () => {
     uiSubjects.onFullScreen$.next(false);
   });
+
+  browserWindow.webContents.on('found-in-page', (_event, result) => {
+    const { requestId, activeMatchOrdinal, matches, finalUpdate } = result;
+    browserWindow.webContents.send('found-in-page-result', {
+      requestId,
+      activeMatchOrdinal,
+      matches,
+      finalUpdate,
+    });
+  });
+
+  ipcMain.on('find-in-page', (_event, text, options) => {
+    browserWindow.webContents.findInPage(text, options);
+  });
+
+  ipcMain.on('stop-find-in-page', (_event, action) => {
+    browserWindow.webContents.stopFindInPage(action);
+  });
+  // get-find-in-page-results
 
   /**
    * URL for main window.

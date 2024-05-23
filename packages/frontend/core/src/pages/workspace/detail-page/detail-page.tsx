@@ -1,6 +1,7 @@
 import { Scrollable } from '@affine/component';
 import { PageDetailSkeleton } from '@affine/component/page-detail-skeleton';
 import { PageAIOnboarding } from '@affine/core/components/affine/ai-onboarding';
+import { FindInPage } from '@affine/core/components/affine/find-in-page';
 import { useAppSettingHelper } from '@affine/core/hooks/affine/use-app-setting-helper';
 import type { PageRootService } from '@blocksuite/blocks';
 import {
@@ -240,6 +241,7 @@ const DetailPageImpl = memo(function DetailPageImpl() {
     <>
       <ViewHeaderIsland>
         <DetailPageHeader page={doc.blockSuiteDoc} workspace={workspace} />
+        {environment.isDesktop && <FindInPage />}
       </ViewHeaderIsland>
       <ViewBodyIsland>
         <div className={styles.mainContainer}>
