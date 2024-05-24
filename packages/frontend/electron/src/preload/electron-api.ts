@@ -56,7 +56,9 @@ export const cmdFind = {
   onFindInPageResult: (callBack: (data: any) => void) =>
     ipcRenderer.on('found-in-page-result', (_event, data) => callBack(data)),
   offFindInPageResult: (callBack: (data: any) => void) =>
-    ipcRenderer.removeListener('found-in-page-result', callBack),
+    ipcRenderer.removeListener('found-in-page-result', (_event, data) =>
+      callBack(data)
+    ),
 };
 
 export function getElectronAPIs() {

@@ -8,6 +8,7 @@ import {
 import { useLiveData, useService } from '@toeverything/infra';
 import { assignInlineVars } from '@vanilla-extract/dynamic';
 import clsx from 'clsx';
+import { useDebouncedState } from 'foxact/use-debounced-state';
 import { useAtomValue } from 'jotai';
 import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 
@@ -15,31 +16,39 @@ import { RightSidebarService } from '../../right-sidebar';
 import { FindInPageService } from '../services/find-in-page';
 import * as styles from './find-in-page-modal.css';
 export const FindInPageModal = () => {
-  const [value, setValue] = useState('');
+  const [hideInput, setHideInput] = useState(false);
+  const [value, setValue] = useDebouncedState('', 300);
   const deferredValue = useDeferredValue(value);
-  const rightSidebarWidth = useAtomValue(rightSidebarWidthAtom);
+
   const findInPage = useService(FindInPageService).findInPage;
   const visible = useLiveData(findInPage.visible$);
   const result = useLiveData(findInPage.result$);
+
+  const rightSidebarWidth = useAtomValue(rightSidebarWidthAtom);
   const rightSidebar = useService(RightSidebarService).rightSidebar;
   const frontView = useLiveData(rightSidebar.front$);
   const open = useLiveData(rightSidebar.isOpen$) && frontView !== undefined;
 
   const handleSearch = useCallback(() => {
+    setHideInput(true);
     findInPage.findInPage(deferredValue);
   }, [deferredValue, findInPage]);
 
   const handleBackWard = useCallback(() => {
+    setHideInput(true);
     findInPage.backward();
   }, [findInPage]);
 
   const handleForward = useCallback(() => {
+    setHideInput(true);
     findInPage.forward();
   }, [findInPage]);
 
   const onChangeVisible = useCallback(
     (visible: boolean) => {
-      findInPage.stopFindInPage('clearSelection');
+      if (!visible) {
+        findInPage.stopFindInPage('clearSelection');
+      }
       findInPage.onChangeVisible(visible);
     },
     [findInPage]
@@ -51,12 +60,12 @@ export const FindInPageModal = () => {
   useEffect(() => {
     const keyArrowDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
-        findInPage.forward();
+        handleForward();
       }
     };
     const keyArrowUp = (event: KeyboardEvent) => {
       if (event.key === 'ArrowUp') {
-        findInPage.backward();
+        handleBackWard();
       }
     };
     document.addEventListener('keydown', keyArrowDown);
@@ -65,7 +74,13 @@ export const FindInPageModal = () => {
       document.removeEventListener('keydown', keyArrowDown);
       document.removeEventListener('keydown', keyArrowUp);
     };
-  }, [findInPage]);
+  }, [findInPage, handleBackWard, handleForward]);
+
+  useEffect(() => {
+    if (result?.matches !== undefined) {
+      setHideInput(false);
+    }
+  }, [result]);
 
   const panelWidth = assignInlineVars({
     [styles.panelWidthVar]: open ? `${rightSidebarWidth}px` : '0',
@@ -91,8 +106,8 @@ export const FindInPageModal = () => {
         <Input
           defaultValue={value}
           onChange={setValue}
-          onBlur={handleSearch}
           onEnter={handleSearch}
+          autoFocus
           preFix={<SearchIcon fontSize={20} />}
           endFix={
             result ? (
@@ -113,7 +128,10 @@ export const FindInPageModal = () => {
             width: 239,
           }}
           className={styles.input}
-          inputStyle={{ padding: '0' }}
+          inputStyle={{
+            padding: '0',
+            visibility: hideInput ? 'hidden' : 'visible',
+          }}
         />
 
         <Button

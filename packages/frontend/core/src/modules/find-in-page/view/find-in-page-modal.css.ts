@@ -33,6 +33,7 @@ export const input = style({
 export const count = style({
   color: cssVar('textSecondaryColor'),
   fontSize: cssVar('fontXs'),
+  userSelect: 'none',
 });
 
 export const arrowButton = style({

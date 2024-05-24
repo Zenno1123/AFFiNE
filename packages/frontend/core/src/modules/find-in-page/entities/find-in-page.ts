@@ -65,7 +65,7 @@ export class FindInPage extends Entity {
   toggleVisible() {
     const nextVisible = !this.visible$.value;
     this.visible$.next(nextVisible);
-    if (nextVisible) {
+    if (!nextVisible) {
       this.stopFindInPage('clearSelection');
     }
   }
