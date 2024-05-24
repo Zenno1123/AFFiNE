@@ -49,10 +49,10 @@ export const affine = {
 
 export const cmdFind = {
   findInPage: (text: string, options?: Electron.FindInPageOptions) =>
-    ipcRenderer.send('find-in-page', text, options),
+    ipcRenderer.invoke('findInPage:findInPage', text, options),
   stopFindInPage: (
     action: 'clearSelection' | 'keepSelection' | 'activateSelection'
-  ) => ipcRenderer.send('stop-find-in-page', action),
+  ) => ipcRenderer.invoke('findInPage:stopFindInPage', action),
   onFindInPageResult: (callBack: (data: any) => void) =>
     ipcRenderer.on('found-in-page-result', (_event, data) => callBack(data)),
   offFindInPageResult: (callBack: (data: any) => void) =>

@@ -22,14 +22,16 @@ export class FindInPage extends Entity {
           return of(null);
         } else {
           return new Observable<FindInPageResult>(subscriber => {
-            cmdFind?.findInPage(searchText);
             const handleResult = (result: FindInPageResult) => {
               subscriber.next(result);
               if (result.finalUpdate) {
                 subscriber.complete();
               }
             };
-            cmdFind?.onFindInPageResult(handleResult);
+            cmdFind
+              ?.findInPage(searchText)
+              .then(() => cmdFind?.onFindInPageResult(handleResult))
+              .catch(e => console.error(e));
 
             return () => {
               cmdFind?.offFindInPageResult(handleResult);
@@ -72,16 +74,24 @@ export class FindInPage extends Entity {
     if (!this.searchText$.value) {
       return;
     }
-    cmdFind?.findInPage(this.searchText$.value, { forward: false });
-    cmdFind?.onFindInPageResult(result => this.updateResult(result));
+    cmdFind
+      ?.findInPage(this.searchText$.value, { forward: false })
+      .then(() => {
+        cmdFind?.onFindInPageResult(result => this.updateResult(result));
+      })
+      .catch(e => console.error(e));
   }
 
   forward() {
     if (!this.searchText$.value) {
       return;
     }
-    cmdFind?.findInPage(this.searchText$.value, { forward: true });
-    cmdFind?.onFindInPageResult(result => this.updateResult(result));
+    cmdFind
+      ?.findInPage(this.searchText$.value, { forward: true })
+      .then(() => {
+        cmdFind?.onFindInPageResult(result => this.updateResult(result));
+      })
+      .catch(e => console.error(e));
   }
 
   stopFindInPage(
@@ -90,6 +100,6 @@ export class FindInPage extends Entity {
     if (action === 'clearSelection') {
       this.searchText$.next(null);
     }
-    cmdFind?.stopFindInPage(action);
+    cmdFind?.stopFindInPage(action).catch(e => console.error(e));
   }
 }

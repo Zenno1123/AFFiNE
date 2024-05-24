@@ -2,8 +2,6 @@ import { Scrollable } from '@affine/component';
 import { PageDetailSkeleton } from '@affine/component/page-detail-skeleton';
 import { PageAIOnboarding } from '@affine/core/components/affine/ai-onboarding';
 import { useAppSettingHelper } from '@affine/core/hooks/affine/use-app-setting-helper';
-import { useRegisterFindInPageCommands } from '@affine/core/hooks/affine/use-register-find-in-page-commands';
-import { FindInPageModal } from '@affine/core/modules/find-in-page/view/find-in-page-modal';
 import type { PageRootService } from '@blocksuite/blocks';
 import {
   BookmarkBlockService,
@@ -137,7 +135,6 @@ const DetailPageImpl = memo(function DetailPageImpl() {
   }, [doc, globalContext, isActiveView, mode]);
 
   const isInTrash = useLiveData(doc.meta$.map(meta => meta.trash));
-  useRegisterFindInPageCommands();
   useRegisterBlocksuiteEditorCommands();
   const title = useLiveData(doc.title$);
   usePageDocumentTitle(title);
@@ -242,7 +239,6 @@ const DetailPageImpl = memo(function DetailPageImpl() {
     <>
       <ViewHeaderIsland>
         <DetailPageHeader page={doc.blockSuiteDoc} workspace={workspace} />
-        {environment.isDesktop && <FindInPageModal />}
       </ViewHeaderIsland>
       <ViewBodyIsland>
         <div className={styles.mainContainer}>
