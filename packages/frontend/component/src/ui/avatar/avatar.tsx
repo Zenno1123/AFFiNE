@@ -17,7 +17,7 @@ import type {
   MouseEvent,
   ReactElement,
 } from 'react';
-import { forwardRef, useMemo, useState } from 'react';
+import { forwardRef, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { IconButton } from '../button';
 import type { TooltipProps } from '../tooltip';
@@ -29,6 +29,7 @@ import { blurVar, sizeVar } from './style.css';
 export type AvatarProps = {
   size?: number;
   url?: string | null;
+  image?: HTMLImageElement /* use pre-loaded image element can avoid flashing */;
   name?: string;
   className?: string;
   style?: CSSProperties;
@@ -39,11 +40,37 @@ export type AvatarProps = {
   removeTooltipOptions?: Omit<TooltipProps, 'children'>;
 
   fallbackProps?: AvatarFallbackProps;
-  imageProps?: Omit<AvatarImageProps, 'src'>;
+  imageProps?: Omit<
+    AvatarImageProps & React.HTMLProps<HTMLCanvasElement>,
+    'src' | 'ref'
+  >;
   avatarProps?: RadixAvatarProps;
   hoverWrapperProps?: HTMLAttributes<HTMLDivElement>;
   removeButtonProps?: HTMLAttributes<HTMLButtonElement>;
 } & HTMLAttributes<HTMLSpanElement>;
+
+function drawImageFit(
+  img: HTMLImageElement,
+  ctx: CanvasRenderingContext2D,
+  size: number
+) {
+  const hRatio = size / img.naturalWidth;
+  const vRatio = size / img.naturalHeight;
+  const ratio = Math.max(hRatio, vRatio);
+  const centerShift_x = (size - img.naturalWidth * ratio) / 2;
+  const centerShift_y = (size - img.naturalHeight * ratio) / 2;
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    img.naturalWidth,
+    img.naturalHeight,
+    centerShift_x,
+    centerShift_y,
+    img.naturalWidth * ratio,
+    img.naturalHeight * ratio
+  );
+}
 
 export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
   (
@@ -51,6 +78,7 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
       size = 20,
       style: propsStyles = {},
       url,
+      image,
       name,
       className,
       colorfulFallback = false,
@@ -76,18 +104,38 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
     const firstCharOfName = useMemo(() => {
       return name?.slice(0, 1) || 'A';
     }, [name]);
-    const [imageDom, setImageDom] = useState<HTMLDivElement | null>(null);
+    const [containerDom, setContainerDom] = useState<HTMLDivElement | null>(
+      null
+    );
     const [removeButtonDom, setRemoveButtonDom] =
       useState<HTMLButtonElement | null>(null);
+    const canvas = useRef<HTMLCanvasElement>(null);
+
+    useLayoutEffect(() => {
+      if (canvas.current && image) {
+        const draw = () => {
+          const ctx = canvas.current?.getContext('2d');
+          if (ctx) {
+            drawImageFit(image, ctx, size * window.devicePixelRatio);
+          }
+        };
+        draw();
+        image.addEventListener('load', draw);
+        return () => {
+          image.removeEventListener('load', draw);
+        };
+      }
+      return;
+    }, [image, size]);
 
     return (
       <AvatarRoot className={style.avatarRoot} {...avatarProps} ref={ref}>
         <Tooltip
-          portalOptions={{ container: imageDom }}
+          portalOptions={{ container: containerDom }}
           {...avatarTooltipOptions}
         >
           <div
-            ref={setImageDom}
+            ref={setContainerDom}
             className={clsx(style.avatarWrapper, className)}
             style={{
               ...assignInlineVars({
@@ -98,24 +146,36 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
             }}
             {...props}
           >
-            <AvatarImage
-              className={style.avatarImage}
-              src={url || ''}
-              alt={name}
-              {...imageProps}
-            />
+            {image /* canvas mode */ ? (
+              <canvas
+                className={style.avatarImage}
+                ref={canvas}
+                width={size * window.devicePixelRatio}
+                height={size * window.devicePixelRatio}
+                {...imageProps}
+              />
+            ) : (
+              <AvatarImage
+                className={style.avatarImage}
+                src={url || ''}
+                alt={name}
+                {...imageProps}
+              />
+            )}
 
-            <AvatarFallback
-              className={clsx(style.avatarFallback, fallbackClassName)}
-              delayMs={url ? 600 : undefined}
-              {...fallbackProps}
-            >
-              {colorfulFallback ? (
-                <ColorfulFallback char={firstCharOfName} />
-              ) : (
-                firstCharOfName.toUpperCase()
-              )}
-            </AvatarFallback>
+            {!image /* no fallback on canvas mode */ && (
+              <AvatarFallback
+                className={clsx(style.avatarFallback, fallbackClassName)}
+                delayMs={url ? 600 : undefined}
+                {...fallbackProps}
+              >
+                {colorfulFallback ? (
+                  <ColorfulFallback char={firstCharOfName} />
+                ) : (
+                  firstCharOfName.toUpperCase()
+                )}
+              </AvatarFallback>
+            )}
             {hoverIcon ? (
               <div
                 className={clsx(style.hoverWrapper, hoverWrapperClassName)}
