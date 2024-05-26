@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center">Zenno1123/AFFiNE,
 
 <h1 style="border-bottom: none">
     <b><a href="https://affine.pro">AFFiNE.PRO</a></b><br />
